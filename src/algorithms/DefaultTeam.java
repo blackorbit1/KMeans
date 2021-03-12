@@ -58,7 +58,7 @@ public class DefaultTeam {
     KMresult result = IO.getBestKM(points);
     if(result != null) scoreMin = result.score;
 
-    for (int i=0;i<1;i++) {
+    for (int i=0;i<20;i++) {
       KMresult tmp = multi_CPU_kmeans(points);
       if(tmp != null){
         double tmp_score = Evaluator.score(tmp.kmeans);
@@ -84,7 +84,7 @@ public class DefaultTeam {
     int np = Runtime.getRuntime().availableProcessors();
 
     // override number of available processors for tests purposes
-    //np = 2;
+    np = 2;
 
     ThreadGroup tg = new ThreadGroup("main");
     List<MultiCPUProcess> sims = new ArrayList<MultiCPUProcess>();

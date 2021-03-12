@@ -60,7 +60,7 @@ public class MultiCPUProcess extends Thread {
                 //System.out.println("score_tmp : " + score_tmp + " - score_min : " + score_min + " score_tmp < score_min " + (score_tmp < score_min));
 
             } catch (Exception e){
-                System.out.println(e.getMessage());
+                //System.out.println(e.getMessage());
             }
 
         }
