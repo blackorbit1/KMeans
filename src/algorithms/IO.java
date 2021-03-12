@@ -72,10 +72,11 @@ public class IO {
     }
     */
 
-    public static boolean save(KMresult kmeans, ArrayList<Point> points){
+    public static boolean save(KMresult kmeans, ArrayList<Point> points, String hash){
         ObjectOutputStream oos = null;
         FileOutputStream fout = null;
-        String fileName = SOLUTIONS_FOLDER + "solution_" + hashListOfPoints(points) + "_" + kmeans.score + ".kmres";
+        String pointsHash = hash != null ? hash : hashListOfPoints(points);
+        String fileName = SOLUTIONS_FOLDER + "solution_" + pointsHash + "_" + kmeans.score + ".kmres";
         try{
             File file = new File(fileName);
             file.createNewFile();
@@ -98,9 +99,9 @@ public class IO {
         return true;
     }
 
-    public static KMresult getBestKM(ArrayList<Point> points){
+    public static KMresult getBestKM(ArrayList<Point> points, String hash){
         KMresult result = null;
-        String pointsHash = hashListOfPoints(points);
+        String pointsHash = hash != null ? hash : hashListOfPoints(points);
 
 
 
@@ -113,12 +114,15 @@ public class IO {
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
                 String fileName = listOfFiles[i].getName();
+                //System.out.println("file : " + fileName);
 
                 Pattern pattern = Pattern.compile(SOLUTION_FILE_REGEX);
                 Matcher matcher = pattern.matcher(fileName);
 
                 if(matcher.find()){
+                    //System.out.println("file hash : " + matcher.group(1));
                     if(matcher.group(1).equals(pointsHash)){
+                        //System.out.println("file hash : " + matcher.group(1));
                         listOfSolutionsScore.add(Double.parseDouble(matcher.group(2)));
                     }
                 }
@@ -133,7 +137,10 @@ public class IO {
             }
         });
 
-        if(listOfSolutionsScore.size() == 0) return null;
+        if(listOfSolutionsScore.size() == 0) {
+            System.out.println("Aucune solution trouvee pour ce graphe");
+            return null;
+        }
 
         System.out.println("Scores : " + listOfSolutionsScore);
 
@@ -183,5 +190,69 @@ public class IO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static ArrayList<Points> getAllPoints() {
+        ArrayList<Points> result = new ArrayList<>();
+        ArrayList<String> allHashs = new ArrayList<>();
+
+        File folder = new File(SOLUTIONS_FOLDER);
+
+        File[] listOfFiles = folder.listFiles();
+        //ArrayList<Double> listOfSolutionsScore = new ArrayList<>();
+
+        for (int i = 0; i < listOfFiles.length; i++) {
+            if (listOfFiles[i].isFile()) {
+                //System.out.println(listOfFiles[i].getName());
+                //String fileName = listOfFiles[i].getName();
+
+                Pattern pattern = Pattern.compile(SOLUTION_FILE_REGEX);
+                Matcher matcher = pattern.matcher(listOfFiles[i].getName());
+
+                if(matcher.find()){
+                    String fileHash = matcher.group(1);
+                    //System.out.println("Le hash : " + fileHash);
+                    if(!allHashs.contains(fileHash)){
+                        allHashs.add(fileHash);
+                        Double score = Double.parseDouble(matcher.group(2));
+
+                        String fileName = SOLUTIONS_FOLDER + "solution_" + fileHash + "_" + score + ".kmres";
+
+                        //System.out.println("FileName : " + fileName);
+
+
+                        ObjectInputStream objectinputstream = null;
+                        try {
+                            FileInputStream streamIn = new FileInputStream(fileName);
+                            objectinputstream = new ObjectInputStream(streamIn);
+                            result.add(new Points(KMtoPoints((KMresult) objectinputstream.readObject()), fileHash));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            if(objectinputstream != null){
+                                try {
+                                    objectinputstream.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static ArrayList<Point> KMtoPoints(KMresult kMresult) {
+        ArrayList<Point> result = new ArrayList<>();
+
+        for(ArrayList<Point> cluster : kMresult.kmeans){
+            for(Point point : cluster){
+                if(!result.contains(point)) result.add(point);
+            }
+        }
+
+        return result;
     }
 }

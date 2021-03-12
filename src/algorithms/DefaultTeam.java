@@ -9,6 +9,33 @@ import java.util.TreeSet;
 public class DefaultTeam {
   //public static ArrayList<Double> solutionsMap = new ArrayList<>();
   public static TreeSet<Double> solutionsMap = new TreeSet<>();
+  private static boolean mainControlled = false;
+  private String hash = null;
+
+  public static void main(String[] args){
+    DefaultTeam df = new DefaultTeam();
+    int NB_ITERATION = 20;
+    mainControlled = true;
+
+    ArrayList<Points> points_list = IO.getAllPoints();
+    //System.out.println(points_list);
+    int i = 0;
+    for(Points points : points_list){
+      //System.out.println(IO.hashListOfPoints(points));
+      i++;
+    }
+    System.out.println("Iterations : " + i);
+
+    int iteration = 0;
+    double score_sum = 0;
+    for(Points points : points_list){
+      df.hash = points.hash;
+      ArrayList<ArrayList<Point>> res = df.calculKMeans(points.points);
+      score_sum += Evaluator.score(res);
+      System.out.println(">>> Iteration " + iteration + " - Moyenne : " + (score_sum / iteration));
+    }
+
+  }
 
   public ArrayList<ArrayList<Point>> calculKMeans(ArrayList<Point> points) {
     solutionsMap = new TreeSet<>();
@@ -55,10 +82,10 @@ public class DefaultTeam {
 
 
     double scoreMin = Integer.MAX_VALUE;
-    KMresult result = IO.getBestKM(points);
+    KMresult result = IO.getBestKM(points, mainControlled ? this.hash : null);
     if(result != null) scoreMin = result.score;
 
-    for (int i=0;i<20;i++) {
+    for (int i=0;i<10;i++) {
       KMresult tmp = multi_CPU_kmeans(points);
       if(tmp != null){
         double tmp_score = Evaluator.score(tmp.kmeans);
@@ -72,7 +99,7 @@ public class DefaultTeam {
     }
 
     result.score = scoreMin; // wtf pk il est faux dans result ?? --> ah c'est à cause du petit canard !
-    IO.save(result, points);
+    IO.save(result, points, mainControlled ? this.hash : null);
 
     return result.kmeans;
   }
@@ -84,7 +111,7 @@ public class DefaultTeam {
     int np = Runtime.getRuntime().availableProcessors();
 
     // override number of available processors for tests purposes
-    np = 2;
+    np = 4;
 
     ThreadGroup tg = new ThreadGroup("main");
     List<MultiCPUProcess> sims = new ArrayList<MultiCPUProcess>();
@@ -205,7 +232,7 @@ public class DefaultTeam {
       }
       // comme c'est deterministe
       //if(solutionsMap.contains(last_score + score_tmp)) return null; // new
-      solutionsMap.add(last_score + score_tmp); // new
+      //solutionsMap.add(last_score + score_tmp); // new
 
       last_score = score_tmp;
 
@@ -220,7 +247,7 @@ public class DefaultTeam {
 
 
     }
-    solutionsMap.add(score_min); // new
+    //solutionsMap.add(score_min); // new
     return new KMresult(kmeans_min, barycentres_min, score_min);
   }
 
