@@ -7,24 +7,14 @@ import java.util.Random;
 import java.util.TreeSet;
 
 public class DefaultTeam {
-  //public static ArrayList<Double> solutionsMap = new ArrayList<>();
   public static TreeSet<Double> solutionsMap = new TreeSet<>();
   private static boolean mainControlled = false;
   private String hash = null;
 
   public static void main(String[] args){
     DefaultTeam df = new DefaultTeam();
-    int NB_ITERATION = 20;
     mainControlled = true;
-
     ArrayList<Points> points_list = IO.getAllPoints();
-    //System.out.println(points_list);
-    int i = 0;
-    for(Points points : points_list){
-      //System.out.println(IO.hashListOfPoints(points));
-      i++;
-    }
-    System.out.println("Iterations : " + i);
 
     int iteration = 0;
     double score_sum = 0;
@@ -39,47 +29,6 @@ public class DefaultTeam {
 
   public ArrayList<ArrayList<Point>> calculKMeans(ArrayList<Point> points) {
     solutionsMap = new TreeSet<>();
-    //System.out.println(points);
-
-
-    /*
-    double score_min = Integer.MAX_VALUE;
-    Pair<ArrayList<ArrayList<Point>>, ArrayList<Point>> kmean_min = null;
-
-    for (int i = 0; i < NB_ITERATIONS; i++){
-      try {
-        Pair<ArrayList<ArrayList<Point>>, ArrayList<Point>> tmp = kmeans(points, TAUX_RANDOM, r);
-        double score_tmp = Evaluator.score(tmp.a);
-
-        if(score_tmp < score_min){
-          kmean_min = tmp;
-          score_min = score_tmp;
-        }
-        //System.out.println("score_tmp : " + score_tmp + " - score_min : " + score_min + " score_tmp < score_min " + (score_tmp < score_min));
-
-      } catch (Exception e){
-        System.out.println(e.getMessage());
-      }
-
-    }
-
-
-    System.out.println("avant : " + Evaluator.score(kmean_min.a));
-    petit_canard(kmean_min.a, kmean_min.b);
-    System.out.println("apres : " + Evaluator.score(kmean_min.a));
-    */
-
-
-
-
-
-
-
-    /*******************
-     * PARTIE A ECRIRE *
-     *******************/
-
-
 
     double scoreMin = Integer.MAX_VALUE;
     KMresult result = IO.getBestKM(points, mainControlled ? this.hash : null);
@@ -98,20 +47,20 @@ public class DefaultTeam {
 
     }
 
-    result.score = scoreMin; // wtf pk il est faux dans result ?? --> ah c'est à cause du petit canard !
+    result.score = scoreMin;
     IO.save(result, points, mainControlled ? this.hash : null);
-
+    
     return result.kmeans;
   }
 
   private KMresult multi_CPU_kmeans(ArrayList<Point> points) {
     Random r = new Random();
     int NB_ITERATIONS = 500;
-    int TAUX_RANDOM = 400 + r.nextInt(400); // TODO : calculer ça dynamiquement pour chaque thread
+    int TAUX_RANDOM = 400 + r.nextInt(400);
     int np = Runtime.getRuntime().availableProcessors();
 
     // override number of available processors for tests purposes
-    np = 4;
+    //np = 4;
 
     ThreadGroup tg = new ThreadGroup("main");
     List<MultiCPUProcess> sims = new ArrayList<MultiCPUProcess>();
@@ -188,8 +137,6 @@ public class DefaultTeam {
     kmeans.add(new ArrayList<Point>());
 
     for(Point point : points){
-      //System.out.println("points.size()"  +points.size());
-      //System.out.println("barycentres.size()"  +barycentres.size());
       double best_distance = Integer.MAX_VALUE;
       int best_bary = -1;
       for(int i = 0; i < barycentres.size(); i++){
@@ -200,9 +147,6 @@ public class DefaultTeam {
       }
       kmeans.get(best_bary).add(point);
     }
-    //System.out.println("kmeans" + kmeans);
-
-    //System.out.println("Score base : " + Evaluator.score(kmeans));
 
     Double last_score = Double.MAX_VALUE;
     int last_score_count = 0;
@@ -220,20 +164,10 @@ public class DefaultTeam {
 
       Double score_tmp = Evaluator.score(kmeans);
       // Comme c'est deterministe, si on est déjà passé dessus on connais le score final
-      /*
-      if(last_score.equals(score_tmp)){
-        if(++last_score_count > 5) break;
-      }
-      */
       if(i == (n-1) && last_score > score_tmp && (solutionsMap.first() > score_tmp)){
-        //System.out.println("Encore dans la course ! " + last_score + " - " + score_tmp + " - " + solutionsMap.first());
         solutionsMap.add(score_tmp);
         n++;
       }
-      // comme c'est deterministe
-      //if(solutionsMap.contains(last_score + score_tmp)) return null; // new
-      //solutionsMap.add(last_score + score_tmp); // new
-
       last_score = score_tmp;
 
       // on garde le meilleur
@@ -242,12 +176,7 @@ public class DefaultTeam {
         barycentres_min = new ArrayList<>(barycentres);
         score_min = score_tmp;
       }
-
-
-
-
     }
-    //solutionsMap.add(score_min); // new
     return new KMresult(kmeans_min, barycentres_min, score_min);
   }
 
@@ -319,70 +248,13 @@ public class DefaultTeam {
           double score_before = Evaluator.score(kmeans);
           kmeans.get(best_cluster).add(kmeans.get(cluster).remove(i));
           double score_after = Evaluator.score(kmeans);
-          //Point point = kmeans.get(best_cluster).get(kmeans.get(best_cluster).size() - 1);
+
           if(!(score_after < score_before)){
-            /*
-            System.out.println("Pas meilleur !! score_before : " + score_before + " - score_after : " + score_after);
-            System.out.println("distance_own : " + distance_own + " cluster moy : " + cluster_moy.get(cluster) + " init_cluster_moy : " + Math.abs(distance_own - cluster_moy.get(cluster)));
-            System.out.println("distance_other : " + point.distance(barycentres.get(best_cluster)) + " other moy : " + cluster_moy.get(best_cluster) + " other_cluster_moy : " + best_cluster_moy);
-            System.out.println("new_init_cluster_moy : " + ((Math.abs((distance_own / kmeans.get(cluster).size()) - cluster_moy.get(cluster)))));
-            System.out.println("new_other_cluster_moy : " + (Math.abs((point.distance(barycentres.get(best_cluster)) / kmeans.get(best_cluster).size()) - cluster_moy.get(best_cluster))));
-            System.out.println("------------");
-            */
             kmeans.get(cluster).add(kmeans.get(best_cluster).remove(kmeans.get(best_cluster).size() - 1));
-          } else {
-            /*
-            System.out.println("new_init_cluster_moy : " + ((Math.abs((distance_own / kmeans.get(cluster).size()) - cluster_moy.get(cluster)))));
-            System.out.println("new_other_cluster_moy : " + (Math.abs((point.distance(barycentres.get(best_cluster)) / kmeans.get(best_cluster).size()) - cluster_moy.get(best_cluster))));
-            System.out.println("------------");
-
-             */
           }
-
-
-
         }
       }
     }
-
-    //System.out.println("cluster_moy" + cluster_moy);
-
     return kmeans;
-  }
-
-
-  /*
-  public ArrayList<ArrayList<Point>> calculKMeansBudget(ArrayList<Point> points) {
-    ArrayList<Point> rouge = new ArrayList<Point>();
-    ArrayList<Point> verte = new ArrayList<Point>();
-
-    for (int i=0;i<points.size()/2;i++){
-      rouge.add(points.get(i));
-      verte.add(points.get(points.size()-i-1));
-    }
-    if (points.size()%2==1) rouge.add(points.get(points.size()/2));
-
-    ArrayList<ArrayList<Point>> kmeans = new ArrayList<ArrayList<Point>>();
-    kmeans.add(rouge);
-    kmeans.add(verte);
-
-
-    return kmeans;
-  }
-  */
-
-
-  public static String md5(String str) {
-    try {
-      java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
-      byte[] array = md.digest(str.getBytes());
-      StringBuffer sb = new StringBuffer();
-      for (int i = 0; i < array.length; ++i) {
-        sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1,3));
-      }
-      return sb.toString();
-    } catch (java.security.NoSuchAlgorithmException e) {
-    }
-    return null;
   }
 }
