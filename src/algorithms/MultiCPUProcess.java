@@ -10,15 +10,15 @@ public class MultiCPUProcess extends Thread {
     private int nb_iterations;
     private int taux_random;
 
-    KMresult<ArrayList<ArrayList<Point>>, ArrayList<Point>> kmean_min;
+    KMresult kmean_min;
 
 
     double getScore() {
         return score;
     }
 
-    ArrayList<ArrayList<Point>> getSolution() {
-        if(kmean_min != null) return kmean_min.kmeans;
+    KMresult getSolution() {
+        if(kmean_min != null) return kmean_min;
         return null;
     }
 
@@ -39,7 +39,7 @@ public class MultiCPUProcess extends Thread {
         Double last_score = Double.MAX_VALUE;
         for (int i = 0; i < nb_iterations; i++){
             try {
-                KMresult<ArrayList<ArrayList<Point>>, ArrayList<Point>> tmp = DefaultTeam.kmeans(points, taux_random, r);
+                KMresult tmp = DefaultTeam.kmeans(points, taux_random, r);
                 if(tmp == null) continue; // new
                 //Double score_tmp = Evaluator.score(tmp.kmeans);
                 /*
@@ -60,7 +60,7 @@ public class MultiCPUProcess extends Thread {
                 //System.out.println("score_tmp : " + score_tmp + " - score_min : " + score_min + " score_tmp < score_min " + (score_tmp < score_min));
 
             } catch (Exception e){
-                //System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
             }
 
         }

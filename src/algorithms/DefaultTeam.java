@@ -11,7 +11,8 @@ public class DefaultTeam {
   public static TreeSet<Double> solutionsMap = new TreeSet<>();
 
   public ArrayList<ArrayList<Point>> calculKMeans(ArrayList<Point> points) {
-    Random r = new Random();
+    solutionsMap = new TreeSet<>();
+    //System.out.println(points);
 
 
     /*
@@ -54,12 +55,13 @@ public class DefaultTeam {
 
 
     double scoreMin = Integer.MAX_VALUE;
-    ArrayList<ArrayList<Point>> result = new ArrayList<>();
+    KMresult result = IO.getBestKM(points);
+    if(result != null) scoreMin = result.score;
 
-    for (int i=0;i<20;i++) {
-      ArrayList<ArrayList<Point>> tmp = multi_CPU_kmeans(points);
+    for (int i=0;i<1;i++) {
+      KMresult tmp = multi_CPU_kmeans(points);
       if(tmp != null){
-        double tmp_score = Evaluator.score(tmp);
+        double tmp_score = Evaluator.score(tmp.kmeans);
         if(tmp_score < scoreMin) {
           scoreMin = tmp_score;
           result = tmp;
@@ -69,10 +71,13 @@ public class DefaultTeam {
 
     }
 
-    return result;
+    result.score = scoreMin; // wtf pk il est faux dans result ?? --> ah c'est à cause du petit canard !
+    IO.save(result, points);
+
+    return result.kmeans;
   }
 
-  private ArrayList<ArrayList<Point>> multi_CPU_kmeans(ArrayList<Point> points) {
+  private KMresult multi_CPU_kmeans(ArrayList<Point> points) {
     Random r = new Random();
     int NB_ITERATIONS = 500;
     int TAUX_RANDOM = 400 + r.nextInt(400); // TODO : calculer ça dynamiquement pour chaque thread
@@ -109,24 +114,26 @@ public class DefaultTeam {
 
     // On recupere et concatene les resultats
     double scoreMin = Integer.MAX_VALUE;
-    ArrayList<ArrayList<Point>> result = null;
+    KMresult result = null;
 
     for (i=0;i<sims.size();i++) {
-      ArrayList<ArrayList<Point>> tmp = sims.get(i).getSolution();
+      KMresult tmp = sims.get(i).getSolution();
       if(tmp != null){
-        double tmp_score = Evaluator.score(tmp);
+        double tmp_score = Evaluator.score(tmp.kmeans);
         if(tmp_score < scoreMin) {
           scoreMin = tmp_score;
           result = tmp;
         }
       }
-
+    }
+    for(MultiCPUProcess sim_to_stop : sims){
+      sim_to_stop.stop();
     }
 
     return result;
   }
 
-  public static KMresult<ArrayList<ArrayList<Point>>, ArrayList<Point>> kmeans(ArrayList<Point> points, int tr, Random r){
+  public static KMresult kmeans(ArrayList<Point> points, int tr, Random r){
 
     double max_x = 0;
     double max_y = 0;
@@ -197,7 +204,7 @@ public class DefaultTeam {
         n++;
       }
       // comme c'est deterministe
-      if(solutionsMap.contains(last_score + score_tmp)) return null; // new
+      //if(solutionsMap.contains(last_score + score_tmp)) return null; // new
       solutionsMap.add(last_score + score_tmp); // new
 
       last_score = score_tmp;
