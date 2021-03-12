@@ -32,7 +32,7 @@ public class DefaultTeam {
       df.hash = points.hash;
       ArrayList<ArrayList<Point>> res = df.calculKMeans(points.points);
       score_sum += Evaluator.score(res);
-      System.out.println(">>> Iteration " + iteration + " - Moyenne : " + (score_sum / iteration));
+      System.out.println(">>> Iteration " + ++iteration + " - Moyenne : " + (score_sum / iteration));
     }
 
   }
